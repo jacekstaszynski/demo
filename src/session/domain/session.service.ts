@@ -146,16 +146,12 @@ export class SessionService {
   }
 
   calculateEventScore(payload: { hit: boolean; distance: number }): number {
-    let score = 0;
+    if (!payload.hit) return 0;
 
-    if (payload.hit) {
-      // Base hit score: +10 points
-      score += 10;
+    let score = 10;
 
-      // Distance bonus: +5 points if distance > 10
-      if (payload.distance > 10) {
-        score += 5;
-      }
+    if (payload.distance > 10) {
+      score += 5;
     }
 
     return score;
@@ -166,7 +162,7 @@ export class SessionService {
     hits: number;
     misses: number;
   } {
-    if (!events || events.length === 0) {
+    if (!events?.length) {
       return { totalScore: 0, hits: 0, misses: 0 };
     }
 
@@ -175,26 +171,25 @@ export class SessionService {
     let misses = 0;
     let hitStreak = 0;
 
-    // Sort events by timestamp to ensure correct order
     const sortedEvents = [...events].sort(
       (a, b) => a.ts.getTime() - b.ts.getTime(),
     );
 
     for (const event of sortedEvents) {
-      if (event.hit) {
-        hits++;
-        hitStreak++;
+      totalScore += event.score;
 
-        // Combo bonus: +5 points for every 3 consecutive hits
-        if (hitStreak % 3 === 0) {
-          totalScore += 5;
-        }
-      } else {
+      if (!event.hit) {
         misses++;
-        hitStreak = 0; // Reset streak on miss
+        hitStreak = 0;
+        continue;
       }
 
-      totalScore += event.score;
+      hits++;
+      hitStreak++;
+
+      if (hitStreak % 3 === 0) {
+        totalScore += 5;
+      }
     }
 
     return { totalScore, hits, misses };

@@ -8,6 +8,13 @@ export class StartSessionRequest {
   mode: Mode;
 }
 
+export class Payload {
+  @IsNotEmpty()
+  hit: boolean;
+
+  @IsNotEmpty()
+  distance: number;
+}
 export class SessionEventRequest {
   @IsEnum(EventType)
   @IsNotEmpty()
@@ -22,14 +29,6 @@ export class SessionEventRequest {
   @ValidateNested()
   @Type(() => Payload)
   payload: Payload;
-}
-
-export class Payload {
-  @IsNotEmpty()
-  hit: boolean;
-
-  @IsNotEmpty()
-  distance: number;
 }
 
 export interface LeaderboardQuery {

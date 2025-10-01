@@ -52,12 +52,8 @@ export class SessionController {
   @Get(':id')
   async getSessionDetails(
     @Param('id') sessionId: string,
-    @UserFromJWT() userData: UserData,
   ): Promise<SessionDetailsResponse> {
-    const result = await this.sessionService.getSessionDetails(
-      sessionId,
-      userData.email,
-    );
+    const result = await this.sessionService.getSessionDetails(sessionId);
     return plainToInstance(SessionDetailsResponse, result);
   }
 }
