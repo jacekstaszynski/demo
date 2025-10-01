@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { UserFromJWT } from '../../auth/user-data.decorator';
 import type { UserData } from '../../auth/user-data.type';
 import { SessionService } from '../domain/session.service';
+import { SessionOwnershipGuard } from '../guards/session-ownership.guard';
 
 import { Mode } from '@prisma/client';
 import {
@@ -46,6 +47,7 @@ export class SessionController {
     return plainToInstance(StartSessionResponse, response);
   }
   @Post(':id/finish')
+  @UseGuards(SessionOwnershipGuard)
   async finishSession(
     @Param('id') sessionId: string,
   ): Promise<FinishSessionResponse> {
@@ -54,6 +56,7 @@ export class SessionController {
   }
 
   @Post(':id/events')
+  @UseGuards(SessionOwnershipGuard)
   async addEvent(
     @Param('id') sessionId: string,
     @Body() request: SessionEventRequest,
@@ -63,6 +66,7 @@ export class SessionController {
   }
 
   @Get(':id')
+  @UseGuards(SessionOwnershipGuard)
   async getSessionDetails(
     @Param('id') sessionId: string,
   ): Promise<SessionDetailsResponse> {

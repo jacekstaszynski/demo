@@ -24,7 +24,7 @@ async function main() {
   await prisma.user.deleteMany({});
   console.log('🗑️  Cleared existing data');
 
-  Promise.all(
+  await Promise.all(
     testUsers.map(async (userData) => {
       const user = await prisma.user.create({
         data: userData,
