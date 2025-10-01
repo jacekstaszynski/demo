@@ -16,13 +16,6 @@ export class ConfigurationService {
   };
   readonly auth0: {
     secret: string;
-
-    // FOR REAL AUTH0 APPLICATION
-    // domain: string;
-    // audience: string;
-    // issuerUrl: string;
-    // client_id: string;
-    // redirect_url: string;
   };
 
   constructor(private configService: ConfigService) {

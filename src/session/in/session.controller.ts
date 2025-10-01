@@ -7,14 +7,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { Mode } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { SessionOwnershipGuard } from '../../auth/guards/session-ownership.guard';
 import { UserFromJWT } from '../../auth/user-data.decorator';
 import type { UserData } from '../../auth/user-data.type';
 import { SessionService } from '../domain/session.service';
-import { SessionOwnershipGuard } from '../guards/session-ownership.guard';
-
-import { Mode } from '@prisma/client';
 import {
   SessionEventRequest,
   StartSessionRequest,

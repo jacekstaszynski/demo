@@ -5,11 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SessionRepository } from '../out/session.repository';
+import { SessionFacade } from '../../session/session.facade';
 
 @Injectable()
 export class SessionOwnershipGuard implements CanActivate {
-  constructor(private readonly sessionRepository: SessionRepository) {}
+  constructor(private readonly sessionFacade: SessionFacade) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -19,8 +19,7 @@ export class SessionOwnershipGuard implements CanActivate {
     if (!sessionId) {
       throw new NotFoundException('Session ID not provided');
     }
-    const session = await this.sessionRepository.findSessionById(sessionId);
-
+    const session = await this.sessionFacade.findSessionById(sessionId);
     if (!session) {
       throw new NotFoundException('Session not found');
     }

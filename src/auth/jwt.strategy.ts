@@ -15,20 +15,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly userFacade: UserFacade,
     private readonly configurationService: ConfigurationService,
   ) {
-    // REAL AUTH CONFIGURATION
-    // super({
-    //   secretOrKeyProvider: passportJwtSecret({
-    //     cache: true,
-    //     rateLimit: true,
-    //     jwksRequestsPerMinute: 5,
-    //     jwksUri: `${configurationService.auth0.issuerUrl}.well-known/jwks.json`,
-    //   }),
-    //   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    //   audience: configurationService.auth0.audience,
-    //   issuer: configurationService.auth0.issuerUrl,
-    //   algorithms: ['RS256'],
-    //   passReqToCallback: true,
-    // });
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -45,7 +31,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new HttpException('User not found', HttpStatus.FORBIDDEN);
     }
 
-    // TODO: check if user exists / if not create or any logic needed
     return { email: payload.sub, name: user.name, id: user.id };
   }
 }

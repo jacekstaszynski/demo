@@ -5,11 +5,13 @@ import { ConfigurationModule } from '../../src/config/configuration.module';
 import { ConfigurationService } from '../../src/config/configuration.service';
 import { UserModule } from '../../src/user/user.module';
 import { JwtStrategy } from './jwt.strategy';
+import { SessionModule } from '../session/session.module';
 
 @Module({
   imports: [
     ConfigurationModule,
     UserModule,
+    SessionModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
     }),
@@ -18,6 +20,7 @@ import { JwtStrategy } from './jwt.strategy';
       inject: [ConfigurationService],
       useFactory: (configurationService: ConfigurationService) => ({
         secret: configurationService.auth0.secret,
+        // TODO: move it to config
         signOptions: { expiresIn: '1d' },
       }),
     }),

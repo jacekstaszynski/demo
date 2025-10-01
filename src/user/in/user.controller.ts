@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserFromJWT } from '../../auth/user-data.decorator';
 import type { UserData } from '../../auth/user-data.type';
 import { UserService } from '../domain/user.service';
