@@ -1,6 +1,7 @@
 # Demo NestJS Project
 
-A NestJS application with PostgreSQL, Prisma ORM, and JWT authentication.
+A NestJS application with PostgreSQL, Prisma ORM, and JWT authentication,
+made for PWD recruitment process.
 
 ## Quick Start
 
@@ -19,7 +20,6 @@ yarn prisma:generate
 # 4. Run migrations
 yarn prisma:migrate
 
-
 # 5. Seed database
 yarn prisma:seed
 
@@ -27,9 +27,7 @@ yarn prisma:seed
 yarn start:dev
 ```
 
-## Essential Commands
-
-### Generate JWT Token
+## Generate JWT Token
 
 ```bash
 # Generate token for a user
