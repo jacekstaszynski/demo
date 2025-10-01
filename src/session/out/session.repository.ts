@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Event, EventType, Mode, Session } from '@prisma/client';
+import { EventType, Mode, type Session } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class SessionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createSession(userId: string, mode: Mode): Promise<Session> {
+  async createSession(userId: string, mode: Mode) {
     return this.prisma.session.create({
       data: {
         userId,
@@ -15,7 +15,7 @@ export class SessionRepository {
     });
   }
 
-  async findSessionById(id: string): Promise<Session | null> {
+  async findSessionById(id: string) {
     return this.prisma.session.findUnique({
       where: { id },
       include: {
@@ -25,12 +25,9 @@ export class SessionRepository {
     });
   }
 
-  async findSessionByIdAndUser(
-    id: string,
-    userId: string,
-  ): Promise<Session | null> {
-    return this.prisma.session.findFirst({
-      where: { id, userId },
+  async getSessionById(id: string) {
+    return this.prisma.session.findUniqueOrThrow({
+      where: { id },
       include: {
         events: true,
         user: true,
@@ -47,7 +44,7 @@ export class SessionRepository {
       distance: number;
       score: number;
     },
-  ): Promise<Event> {
+  ) {
     return this.prisma.event.create({
       data: {
         sessionId,
@@ -78,6 +75,7 @@ export class SessionRepository {
       },
       include: {
         user: true,
+        events: true,
       },
       orderBy: {
         score: 'desc',
@@ -86,7 +84,7 @@ export class SessionRepository {
     });
   }
 
-  async getUserActiveSession(userId: string): Promise<Session | null> {
+  async getUserActiveSession(userId: string) {
     return this.prisma.session.findFirst({
       where: {
         userId,

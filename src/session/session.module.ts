@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SessionService } from './domain/session.service';
-import {
-  LeaderboardController,
-  SessionController,
-} from './in/session.controller';
+import { LeaderboardController } from './in/leader-board.controller';
+import { SessionController } from './in/session.controller';
 import { SessionRepository } from './out/session.repository';
 
 @Module({

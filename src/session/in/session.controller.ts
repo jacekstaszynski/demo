@@ -1,15 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseEnumPipe,
-  ParseIntPipe,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { Mode } from '@prisma/client';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { UserFromJWT } from '../../auth/user-data.decorator';
 import type { UserData } from '../../auth/user-data.type';
@@ -19,11 +9,10 @@ import {
   StartSessionRequest,
 } from './type/session.request';
 import {
-  FinishSessionResponseDto,
-  LeaderboardEntryDto,
-  SessionDetailsResponseDto,
-  SessionEventResponseDto,
-  StartSessionResponseDto,
+  FinishSessionResponse,
+  SessionDetailsResponse,
+  SessionEventResponse,
+  StartSessionResponse,
 } from './type/session.response';
 
 @Controller('sessions')
@@ -35,47 +24,40 @@ export class SessionController {
   async startSession(
     @Body() request: StartSessionRequest,
     @UserFromJWT() userData: UserData,
-  ): Promise<StartSessionResponseDto> {
-    return this.sessionService.startSession(userData.email, {
+  ): Promise<StartSessionResponse> {
+    const response = await this.sessionService.startSession(userData.email, {
       mode: request.mode,
     });
+
+    // plainToInstance - NOT needed here just for demo purposes to show how it should look like in real life app.
+    return plainToInstance(StartSessionResponse, response);
+  }
+  @Post(':id/finish')
+  async finishSession(
+    @Param('id') sessionId: string,
+  ): Promise<FinishSessionResponse> {
+    const result = await this.sessionService.finishSession(sessionId);
+    return plainToInstance(FinishSessionResponse, result);
   }
 
   @Post(':id/events')
   async addEvent(
     @Param('id') sessionId: string,
     @Body() request: SessionEventRequest,
-    @UserFromJWT() userData: UserData,
-  ): Promise<SessionEventResponseDto> {
-    return this.sessionService.addEvent(sessionId, userData.email, request);
-  }
-
-  @Post(':id/finish')
-  async finishSession(
-    @Param('id') sessionId: string,
-    @UserFromJWT() userData: UserData,
-  ): Promise<FinishSessionResponseDto> {
-    return this.sessionService.finishSession(sessionId, userData.email);
+  ): Promise<SessionEventResponse> {
+    const result = await this.sessionService.addEvent(sessionId, request);
+    return plainToInstance(SessionEventResponse, result);
   }
 
   @Get(':id')
   async getSessionDetails(
     @Param('id') sessionId: string,
     @UserFromJWT() userData: UserData,
-  ): Promise<SessionDetailsResponseDto> {
-    return this.sessionService.getSessionDetails(sessionId, userData.email);
-  }
-}
-
-@Controller('leaderboard')
-export class LeaderboardController {
-  constructor(private readonly sessionService: SessionService) {}
-
-  @Get()
-  async getLeaderboard(
-    @Query('mode', new ParseEnumPipe(Mode)) mode: Mode,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
-  ): Promise<LeaderboardEntryDto[]> {
-    return this.sessionService.getLeaderboard({ mode, limit });
+  ): Promise<SessionDetailsResponse> {
+    const result = await this.sessionService.getSessionDetails(
+      sessionId,
+      userData.email,
+    );
+    return plainToInstance(SessionDetailsResponse, result);
   }
 }

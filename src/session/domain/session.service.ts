@@ -4,17 +4,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Event } from '@prisma/client';
-import { SessionRepository } from '../out/session.repository';
+import { plainToInstance } from 'class-transformer';
+import {
+  LeaderboardQuery,
+  SessionEventRequest,
+  StartSessionRequest,
+} from '../in/type/session.request';
 import {
   FinishSessionResponse,
-  LeaderboardEntry,
-  LeaderboardQuery,
+  LeaderboardPlayer,
   SessionDetailsResponse,
-  SessionEventRequest,
   SessionEventResponse,
-  StartSessionRequest,
   StartSessionResponse,
-} from './type/session.types.ts';
+} from '../in/type/session.response';
+import type { SessionWithEvents } from '../out/prisma.types';
+import { SessionRepository } from '../out/session.repository';
 
 @Injectable()
 export class SessionService {
@@ -24,9 +28,9 @@ export class SessionService {
     userId: string,
     request: StartSessionRequest,
   ): Promise<StartSessionResponse> {
-    // Check if user has an active session
     const activeSession =
       await this.sessionRepository.getUserActiveSession(userId);
+
     if (activeSession) {
       throw new BadRequestException('User already has an active session');
     }
@@ -44,58 +48,14 @@ export class SessionService {
     };
   }
 
-  async addEvent(
-    sessionId: string,
-    userId: string,
-    request: SessionEventRequest,
-  ): Promise<SessionEventResponse> {
-    const session = await this.sessionRepository.findSessionByIdAndUser(
-      sessionId,
-      userId,
-    );
-
-    if (!session) {
-      throw new NotFoundException('Session not found');
-    }
-
-    if (session.finishedAt) {
-      throw new BadRequestException('Session is already finished');
-    }
-
-    const score = this.calculateEventScore(request.payload);
-
-    await this.sessionRepository.addEvent(sessionId, {
-      type: 'SHOT',
-      ts: new Date(request.ts),
-      hit: request.payload.hit,
-      distance: request.payload.distance,
-      score,
-    });
-
-    return { accepted: true };
-  }
-
-  async finishSession(
-    sessionId: string,
-    userId: string,
-  ): Promise<FinishSessionResponse> {
-    const session = await this.sessionRepository.findSessionByIdAndUser(
-      sessionId,
-      userId,
-    );
-
-    if (!session) {
-      throw new NotFoundException('Session not found');
-    }
-
-    if (session.finishedAt) {
-      throw new BadRequestException('Session is already finished');
-    }
+  async finishSession(sessionId: string): Promise<FinishSessionResponse> {
+    const finishedAt = new Date();
+    const session = await this.sessionRepository.findSessionById(sessionId);
+    const validatedSession = this.validateSession(session);
 
     const { totalScore, hits, misses } = this.calculateSessionScore(
-      session.events,
+      validatedSession.events,
     );
-    const finishedAt = new Date();
 
     await this.sessionRepository.finishSession(
       sessionId,
@@ -104,8 +64,8 @@ export class SessionService {
     );
 
     return {
-      id: session.id,
-      playerId: session.userId,
+      id: validatedSession.id,
+      playerId: validatedSession.userId,
       score: totalScore,
       hits,
       misses,
@@ -113,40 +73,51 @@ export class SessionService {
     };
   }
 
-  async getSessionDetails(
-    sessionId: string,
-    userId: string,
-  ): Promise<SessionDetailsResponse> {
-    const session = await this.sessionRepository.findSessionByIdAndUser(
-      sessionId,
-      userId,
-    );
-
+  validateSession(session?: SessionWithEvents | null): SessionWithEvents {
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    const events = session.events.map((event) => ({
-      id: event.id,
-      type: event.type as 'SHOT',
-      ts: event.ts,
-      hit: event.hit,
-      distance: event.distance,
-      score: event.score,
-    }));
+    if (session.finishedAt) {
+      throw new BadRequestException('Session is already finished');
+    }
+    return session;
+  }
+
+  async addEvent(
+    sessionId: string,
+    request: SessionEventRequest,
+  ): Promise<Event> {
+    const session = await this.sessionRepository.findSessionById(sessionId);
+    this.validateSession(session);
+    const score = this.calculateEventScore(request.payload);
+
+    const event = await this.sessionRepository.addEvent(sessionId, {
+      type: request.type,
+      ts: request.ts,
+      hit: request.payload.hit,
+      distance: request.payload.distance,
+      score,
+    });
+
+    return event;
+  }
+
+  async getSessionDetails(sessionId: string): Promise<SessionDetailsResponse> {
+    const session = await this.sessionRepository.getSessionById(sessionId);
 
     const response: SessionDetailsResponse = {
       id: session.id,
       playerId: session.userId,
       mode: session.mode,
       startedAt: session.startedAt,
-      events,
+      events: plainToInstance(SessionEventResponse, session.events),
     };
 
     if (session.finishedAt) {
       const { hits, misses } = this.calculateSessionScore(session.events);
       response.finishedAt = session.finishedAt;
-      response.score = session.score;
+      response.score = session.score || 0;
       response.hits = hits;
       response.misses = misses;
     }
@@ -154,7 +125,7 @@ export class SessionService {
     return response;
   }
 
-  async getLeaderboard(query: LeaderboardQuery): Promise<LeaderboardEntry[]> {
+  async getLeaderboard(query: LeaderboardQuery): Promise<LeaderboardPlayer[]> {
     const sessions = await this.sessionRepository.getLeaderboard(
       query.mode,
       query.limit,
@@ -166,7 +137,7 @@ export class SessionService {
       return {
         playerId: session.userId,
         playerName: session.user.name,
-        score: session.score!,
+        score: session.score || 0,
         hits,
         misses,
         finishedAt: session.finishedAt!,
@@ -174,10 +145,7 @@ export class SessionService {
     });
   }
 
-  private calculateEventScore(payload: {
-    hit: boolean;
-    distance: number;
-  }): number {
+  calculateEventScore(payload: { hit: boolean; distance: number }): number {
     let score = 0;
 
     if (payload.hit) {
@@ -193,11 +161,15 @@ export class SessionService {
     return score;
   }
 
-  private calculateSessionScore(events: Event[]): {
+  calculateSessionScore(events: Event[] | null): {
     totalScore: number;
     hits: number;
     misses: number;
   } {
+    if (!events || events.length === 0) {
+      return { totalScore: 0, hits: 0, misses: 0 };
+    }
+
     let totalScore = 0;
     let hits = 0;
     let misses = 0;

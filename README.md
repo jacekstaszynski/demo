@@ -4,6 +4,8 @@ A NestJS application with PostgreSQL, Prisma ORM, and JWT authentication.
 
 ## Quick Start
 
+Create `.env` file by copying `.env.example` and fill in the values.
+
 ```bash
 # 1. Install dependencies
 yarn install
@@ -40,12 +42,15 @@ yarn generate-jwt john.doe@example.com
 
 Use .env.example as reference for the environment variables .env file.
 
-## License
-
-MIT
-
 ## TODO
 
 - [ ] Add tests
 - [ ] Add logic
 -
+
+## Improvements
+
+- use websockets for faster conenction
+- use custom Errors/Exceptions and error handling
+- add types to repository returns
+- score is right now calculated while getting response and not store in DB because logic can change or be fluent in different games so that is why i dont want to sotre it in DB. Additionally it is very fast to calculate it in the service layer so no need to store it in DB for now.

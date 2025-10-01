@@ -1,6 +1,6 @@
 import { EventType, Mode } from '@prisma/client';
-import { Type } from 'class-transformer';
-import { IsEnum, IsNotEmpty, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsDate, IsEnum, IsNotEmpty, ValidateNested } from 'class-validator';
 
 export class StartSessionRequest {
   @IsEnum(Mode)
@@ -13,8 +13,10 @@ export class SessionEventRequest {
   @IsNotEmpty()
   type: EventType;
 
+  @IsDate()
   @IsNotEmpty()
-  ts: string;
+  @Transform(({ value }) => new Date(value))
+  ts: Date;
 
   @IsNotEmpty()
   @ValidateNested()
@@ -28,4 +30,9 @@ export class Payload {
 
   @IsNotEmpty()
   distance: number;
+}
+
+export interface LeaderboardQuery {
+  mode: Mode;
+  limit: number;
 }

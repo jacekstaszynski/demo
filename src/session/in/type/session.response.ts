@@ -1,51 +1,91 @@
-import { Mode } from '@prisma/client';
+import { EventType, Mode } from '@prisma/client';
+import { Expose } from 'class-transformer';
 
-export class StartSessionResponseDto {
+export class StartSessionResponse {
+  @Expose()
   id: string;
+
+  @Expose()
   playerId: string;
+
+  @Expose()
   mode: Mode;
+
+  @Expose()
   startedAt: Date;
 }
 
-export class SessionEventResponseDto {
-  accepted: boolean;
-}
-
-export class FinishSessionResponseDto {
+export class FinishSessionResponse {
+  @Expose()
   id: string;
+
+  @Expose()
   playerId: string;
+
+  @Expose()
   score: number;
+
+  @Expose()
   hits: number;
+
+  @Expose()
   misses: number;
+
+  @Expose()
   finishedAt: Date;
 }
 
-export class SessionEventDto {
+export class SessionDetailsResponse {
+  @Expose()
   id: string;
-  type: 'SHOT';
-  ts: Date;
-  hit: boolean;
-  distance: number;
-  score: number;
-}
-
-export class SessionDetailsResponseDto {
-  id: string;
+  @Expose()
   playerId: string;
+  @Expose()
   mode: Mode;
+  @Expose()
   startedAt: Date;
+  @Expose()
   finishedAt?: Date;
   score?: number;
+  @Expose()
   hits?: number;
+  @Expose()
   misses?: number;
-  events?: SessionEventDto[];
+  @Expose()
+  events?: SessionEventResponse[];
 }
 
-export class LeaderboardEntryDto {
-  playerId: string;
-  playerName: string;
+export class SessionEventResponse {
+  @Expose()
+  id: string;
+  @Expose()
+  type: EventType;
+  @Expose()
+  ts: Date;
+  @Expose()
+  hit: boolean;
+  @Expose()
+  distance: number;
+  @Expose()
   score: number;
+}
+
+export class LeaderboardResponse {
+  @Expose()
+  players: LeaderboardPlayer[];
+}
+
+export class LeaderboardPlayer {
+  @Expose()
+  playerId: string;
+  @Expose()
+  playerName: string;
+  @Expose()
+  score: number;
+  @Expose()
   hits: number;
+  @Expose()
   misses: number;
+  @Expose()
   finishedAt: Date;
 }
