@@ -50,3 +50,4 @@ yarn generate-jwt john.doe@example.com
 - Expand error handling with custom exceptions
 - Adjust ESLint for test files
 - Add types to repository returns
+- and much more...
