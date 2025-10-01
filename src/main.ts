@@ -5,7 +5,6 @@ import { CatchUnknownExceptions } from './error-handling/catch-unknown-exception
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
 
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new CatchUnknownExceptions(httpAdapterHost));
@@ -16,6 +15,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  await app.listen(process.env.PORT ?? 3000);
 
   console.log(`Application is running on: ${await app.getUrl()}`);
 }

@@ -7,10 +7,12 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { ConfigurationService } from '../src/config/configuration.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { UserFacade } from '../src/user/user.facade';
 
 describe('SessionController (e2e)', () => {
   let app: INestApplication<App>;
   let prismaService: PrismaService;
+  let userFacade: UserFacade;
   let configurationService: ConfigurationService;
   let authToken: string;
 
@@ -25,12 +27,10 @@ describe('SessionController (e2e)', () => {
   const mockSession = {
     id: 'session-123',
     userId: mockUser.id,
-    mode: Mode.ARCADE,
+    mode: Mode.arcade,
     startedAt: new Date(),
     finishedAt: null,
     score: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
   const mockEvent = {
@@ -41,8 +41,6 @@ describe('SessionController (e2e)', () => {
     hit: true,
     distance: 15,
     score: 15,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
   beforeAll(async () => {
@@ -51,19 +49,19 @@ describe('SessionController (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
+
     await app.init();
 
     prismaService = module.get(PrismaService);
+    userFacade = module.get(UserFacade);
     configurationService = module.get(ConfigurationService);
 
-    // Generate JWT token for authentication
     const payload = { sub: mockUser.email };
     authToken = jwt.sign(payload, configurationService.auth0.secret, {
       expiresIn: '1h',
     });
 
-    // Mock user lookup
-    jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+    jest.spyOn(userFacade, 'findUserByEmail').mockResolvedValue(mockUser);
   });
 
   afterAll(async () => {
@@ -72,7 +70,6 @@ describe('SessionController (e2e)', () => {
 
   describe('POST /sessions - startSession', () => {
     it('should start a new session successfully', async () => {
-      // Mock Prisma methods
       jest.spyOn(prismaService.session, 'findFirst').mockResolvedValue(null); // No active session
       jest
         .spyOn(prismaService.session, 'create')
@@ -81,7 +78,7 @@ describe('SessionController (e2e)', () => {
       const response = await request(app.getHttpServer())
         .post('/sessions')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ mode: Mode.ARCADE })
+        .send({ mode: Mode.arcade })
         .expect(201);
 
       expect(response.body.id).toBe(mockSession.id);
@@ -96,8 +93,7 @@ describe('SessionController (e2e)', () => {
         score: 15,
       };
 
-      // Mock Prisma methods
-      jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue({
+      jest.spyOn(prismaService.session, 'findUniqueOrThrow').mockResolvedValue({
         ...mockSession,
         events: [mockEvent] as any,
         user: mockUser,
@@ -117,8 +113,7 @@ describe('SessionController (e2e)', () => {
 
   describe('POST /sessions/:id/events - addEvent', () => {
     it('should add an event to a session successfully', async () => {
-      // Mock Prisma methods
-      jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue({
+      jest.spyOn(prismaService.session, 'findUniqueOrThrow').mockResolvedValue({
         ...mockSession,
         events: [] as any,
         user: mockUser,
@@ -146,7 +141,6 @@ describe('SessionController (e2e)', () => {
 
   describe('GET /sessions/:id - getSessionDetails', () => {
     it('should get session details successfully', async () => {
-      // Mock Prisma methods
       jest.spyOn(prismaService.session, 'findUniqueOrThrow').mockResolvedValue({
         ...mockSession,
         events: [mockEvent] as any,

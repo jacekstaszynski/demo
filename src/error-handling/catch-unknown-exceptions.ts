@@ -27,14 +27,17 @@ export class CatchUnknownExceptions implements ExceptionFilter {
     const context = host.switchToHttp();
     const httpStatus = status || HttpStatus.BAD_REQUEST;
     const message = exception?.response?.message
-      ? [exception?.response?.message]
+      ? exception?.response?.message
       : exception?.message;
+    const formattedMessage = Array.isArray(message)
+      ? message.join(', ')
+      : message;
     const responseBody: ErrorResponse = {
       statusCode: httpStatus,
       statusDescription: exception.cause?.toString(),
       timestamp: new Date().toISOString(),
       path: httpAdapter.getRequestUrl(context.getRequest()),
-      message: message,
+      message: formattedMessage,
     };
     this.logger.error(`ERROR TYPE with MESSAGE: ${message}`);
     return httpAdapter.reply(context.getResponse(), responseBody, httpStatus);

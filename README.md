@@ -54,3 +54,4 @@ Use .env.example as reference for the environment variables .env file.
 - use custom Errors/Exceptions and error handling
 - add types to repository returns
 - score is right now calculated while getting response and not store in DB because logic can change or be fluent in different games so that is why i dont want to sotre it in DB. Additionally it is very fast to calculate it in the service layer so no need to store it in DB for now.
+- move tests closer to logic
