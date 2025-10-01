@@ -47,7 +47,7 @@ model Event {
 }
 
 enum Mode {
-  ARCADE
+  arcade
 }
 
 enum EventType {

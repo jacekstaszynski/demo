@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import {
@@ -17,7 +13,6 @@ import {
   SessionEventResponse,
   StartSessionResponse,
 } from '../in/type/session.response';
-import type { SessionWithEvents } from '../out/prisma.types';
 import { SessionRepository } from '../out/session.repository';
 
 @Injectable()
@@ -28,13 +23,6 @@ export class SessionService {
     userId: string,
     request: StartSessionRequest,
   ): Promise<StartSessionResponse> {
-    const activeSession =
-      await this.sessionRepository.getUserActiveSession(userId);
-
-    if (activeSession) {
-      throw new BadRequestException('User already has an active session');
-    }
-
     const session = await this.sessionRepository.createSession(
       userId,
       request.mode,
@@ -50,11 +38,13 @@ export class SessionService {
 
   async finishSession(sessionId: string): Promise<FinishSessionResponse> {
     const finishedAt = new Date();
-    const session = await this.sessionRepository.findSessionById(sessionId);
-    const validatedSession = this.validateSession(session);
+    const session = await this.sessionRepository.getSessionById(sessionId);
+    if (session.finishedAt) {
+      throw new BadRequestException('Session is already finished');
+    }
 
     const { totalScore, hits, misses } = this.calculateSessionScore(
-      validatedSession.events,
+      session.events,
     );
 
     await this.sessionRepository.finishSession(
@@ -64,8 +54,8 @@ export class SessionService {
     );
 
     return {
-      id: validatedSession.id,
-      playerId: validatedSession.userId,
+      id: session.id,
+      playerId: session.userId,
       score: totalScore,
       hits,
       misses,
@@ -73,23 +63,16 @@ export class SessionService {
     };
   }
 
-  validateSession(session?: SessionWithEvents | null): SessionWithEvents {
-    if (!session) {
-      throw new NotFoundException('Session not found');
-    }
-
-    if (session.finishedAt) {
-      throw new BadRequestException('Session is already finished');
-    }
-    return session;
-  }
-
   async addEvent(
     sessionId: string,
     request: SessionEventRequest,
   ): Promise<Event> {
-    const session = await this.sessionRepository.findSessionById(sessionId);
-    this.validateSession(session);
+    const session = await this.sessionRepository.getSessionById(sessionId);
+
+    if (session.finishedAt) {
+      throw new BadRequestException('Session is already finished');
+    }
+
     const score = this.calculateEventScore(request.payload);
 
     const event = await this.sessionRepository.addEvent(sessionId, {

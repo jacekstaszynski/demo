@@ -1,9 +1,19 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { UserFromJWT } from '../../auth/user-data.decorator';
 import type { UserData } from '../../auth/user-data.type';
 import { SessionService } from '../domain/session.service';
+
+import { Mode } from '@prisma/client';
 import {
   SessionEventRequest,
   StartSessionRequest,
@@ -25,7 +35,10 @@ export class SessionController {
     @Body() request: StartSessionRequest,
     @UserFromJWT() userData: UserData,
   ): Promise<StartSessionResponse> {
-    const response = await this.sessionService.startSession(userData.email, {
+    if (!Object.values(Mode).includes(request.mode)) {
+      throw new BadRequestException('Invalid mode');
+    }
+    const response = await this.sessionService.startSession(userData.id, {
       mode: request.mode,
     });
 

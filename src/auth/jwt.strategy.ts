@@ -1,9 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigurationService } from '../../src/config/configuration.service';
@@ -51,6 +46,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     // TODO: check if user exists / if not create or any logic needed
-    return { email: payload.sub, name: user.name };
+    return { email: payload.sub, name: user.name, id: user.id };
   }
 }
